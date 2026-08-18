@@ -118,6 +118,38 @@ functions do not run a persistent worker process. For production, run the worker
 runtime (VM/container) that shares the same `APP_DATABASE_URL`, `APP_REDIS_URL` and
 `APP_STORAGE_PATH`.
 
+## Quick deploy runbook (Railway + Vercel frontend)
+
+Use this setup if you want to keep the frontend on Vercel and move backend processing to Railway.
+
+1. Create a new Railway project from this repository.
+2. Add a PostgreSQL service and a Redis service in the same Railway project.
+3. Create three app services from `backend/Dockerfile`:
+  - API service command: `sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT"`
+  - Worker service command: `rq worker --url $APP_REDIS_URL $APP_RQ_QUEUE_NAME`
+  - Cleanup service command: `python -m app.workers.cleanup_scheduler`
+4. Set environment variables on all three backend services:
+  - `APP_ENVIRONMENT=production`
+  - `APP_DATABASE_URL=<Railway Postgres connection string>`
+  - `APP_REDIS_URL=<Railway Redis connection string>`
+  - `APP_TOKEN_PEPPER=<long random secret>`
+  - `APP_RQ_QUEUE_NAME=conversions`
+  - `APP_STORAGE_PATH=/data/conversions`
+5. Add one persistent volume and mount it at `/data/conversions` on API, Worker and Cleanup
+  so all services share uploaded PDFs, generated DOCX and previews.
+6. Get the public Railway URL of the API service.
+7. In Vercel (frontend project), set:
+  - `VITE_API_BASE_URL=https://<your-railway-api-domain>`
+8. In Railway API service, set CORS origins to the Vercel frontend domain:
+  - `APP_CORS_ORIGINS=https://<your-vercel-frontend-domain>`
+
+After deploy, validate this flow:
+
+1. `GET /health` on Railway API returns `{"status":"ok"}`.
+2. Upload from frontend returns `202` and job status `QUEUED`.
+3. Worker logs show `process_conversion` jobs being consumed.
+4. Poll endpoint progresses to `COMPLETED` and download works.
+
 ## Security and retention notes
 
 - Uploaded names never become filesystem paths; opaque UUID-based keys are used.

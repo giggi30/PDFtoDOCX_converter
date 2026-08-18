@@ -41,6 +41,12 @@ export interface ConversionResult {
   download_available: boolean;
 }
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+
+function endpoint(path: string): string {
+  return API_BASE ? `${API_BASE}${path}` : path;
+}
+
 async function responseError(response: Response): Promise<Error> {
   const payload = (await response.json().catch(() => null)) as { detail?: string } | null;
   return new Error(payload?.detail ?? "Il servizio non ha completato la richiesta.");
@@ -51,7 +57,7 @@ export async function createConversion(
 ): Promise<ConversionCreated> {
   const form = new FormData();
   form.append("file", file);
-  const response = await fetch("/api/v1/conversions", { method: "POST", body: form });
+  const response = await fetch(endpoint("/api/v1/conversions"), { method: "POST", body: form });
   if (!response.ok) throw await responseError(response);
   return response.json() as Promise<ConversionCreated>;
 }
@@ -61,7 +67,7 @@ function authorization(token: string): HeadersInit {
 }
 
 export async function getConversion(jobId: string, token: string): Promise<ConversionStatus> {
-  const response = await fetch(`/api/v1/conversions/${jobId}`, {
+  const response = await fetch(endpoint(`/api/v1/conversions/${jobId}`), {
     headers: authorization(token),
   });
   if (!response.ok) throw await responseError(response);
@@ -69,7 +75,7 @@ export async function getConversion(jobId: string, token: string): Promise<Conve
 }
 
 export async function getResult(jobId: string, token: string): Promise<ConversionResult> {
-  const response = await fetch(`/api/v1/conversions/${jobId}/result`, {
+  const response = await fetch(endpoint(`/api/v1/conversions/${jobId}/result`), {
     headers: authorization(token),
   });
   if (!response.ok) throw await responseError(response);
@@ -77,13 +83,14 @@ export async function getResult(jobId: string, token: string): Promise<Conversio
 }
 
 export async function fetchArtifact(url: string, token: string): Promise<string> {
-  const response = await fetch(url, { headers: authorization(token) });
+  const target = url.startsWith("http://") || url.startsWith("https://") ? url : endpoint(url);
+  const response = await fetch(target, { headers: authorization(token) });
   if (!response.ok) throw await responseError(response);
   return URL.createObjectURL(await response.blob());
 }
 
 export async function downloadResult(jobId: string, token: string): Promise<void> {
-  const response = await fetch(`/api/v1/conversions/${jobId}/download`, {
+  const response = await fetch(endpoint(`/api/v1/conversions/${jobId}/download`), {
     headers: authorization(token),
   });
   if (!response.ok) throw await responseError(response);

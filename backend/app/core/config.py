@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     database_url: str = "postgresql+psycopg://pdf_converter:pdf_converter@postgres/pdf_converter"
     redis_url: str = "redis://redis:6379/0"
+    cors_origins: str = ""
     storage_path: Path = Path("/tmp/pdf-to-docx")
     job_ttl_minutes: int = Field(default=60, ge=1, le=60)
     max_upload_bytes: int = Field(default=10 * 1024 * 1024, ge=1)
