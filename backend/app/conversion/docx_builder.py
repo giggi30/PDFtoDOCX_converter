@@ -587,7 +587,7 @@ def _configure_document_styles(document: DocumentObject) -> None:
         properties.append(outline)
 
 
-def _images_for_region(page: PageModel, region: Region) -> list[TextBlock]:
+def _images_for_region(page: PageModel, region: Region) -> list[ImageElement]:
     result: list[ImageElement] = []
     for image in page.images:
         if image.role == "background":

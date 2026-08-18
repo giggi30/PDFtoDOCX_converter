@@ -2,6 +2,7 @@ import base64
 import io
 import re
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -255,8 +256,8 @@ def _render_transparent_vector_crop(
     box: BoundingBox,
     *,
     background_color: str,
-    text_blocks: list[TextBlock] = (),
-    extra_bboxes: list[BoundingBox] = (),
+    text_blocks: Sequence[TextBlock] = (),
+    extra_bboxes: Sequence[BoundingBox] = (),
 ) -> str | None:
     """Rasterize a vector-only fallback while keeping text editable above it."""
     try:
@@ -310,7 +311,7 @@ def _vector_backgrounds(
     page_height: float,
     images: list[ImageElement],
     text_blocks: list[TextBlock],
-    glyphs: list[_Glyph] = (),
+    glyphs: Sequence[_Glyph] = (),
 ) -> list[ImageElement]:
     """Preserve complex vector artwork as page-anchored transparent overlays."""
     overlays: list[ImageElement] = []
@@ -354,6 +355,8 @@ def _vector_backgrounds(
             y1=min(float(page.height), box.y1),
         )
         if overlay_box.width <= 0 or overlay_box.height <= 0:
+            continue
+        if color is None:
             continue
         content_base64 = _render_transparent_vector_crop(
             page,
