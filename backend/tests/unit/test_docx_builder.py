@@ -273,7 +273,9 @@ def test_hero_title_keeps_source_font_and_drops_shadow_duplicates() -> None:
 
     assert document.element.body.xpath("count(.//w:t[normalize-space(.)='LUIGI RAGNI'])") == 1
     title_paragraph = next(
-        paragraph for paragraph in document.tables[0].cell(0, 0).paragraphs if paragraph.text.strip()
+        paragraph
+        for paragraph in document.tables[0].cell(0, 0).paragraphs
+        if paragraph.text.strip()
     )
     assert title_paragraph.runs[0].font.name == "EB Garamond"
     assert not result.warnings

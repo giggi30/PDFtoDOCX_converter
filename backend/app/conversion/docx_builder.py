@@ -403,8 +403,7 @@ def _add_region_content(
             paragraph.paragraph_format.space_before = Pt(space_before)
             
             paired_icon = icon_map.get(element.id)
-            element_left_indent = left_indent_pt
-            
+
             if paired_icon is not None and paired_icon.content_base64:
                 try:
                     icon_content = base64.b64decode(paired_icon.content_base64)
@@ -543,7 +542,10 @@ def _is_shadow_duplicate(block: TextBlock, other: TextBlock) -> bool:
         return False
 
     # Check for proximity even if no direct area overlap
-    horizontal_match = abs(block.bbox.x0 - other.bbox.x0) < 20 or abs(block.bbox.x1 - other.bbox.x1) < 20
+    horizontal_match = (
+        abs(block.bbox.x0 - other.bbox.x0) < 20
+        or abs(block.bbox.x1 - other.bbox.x1) < 20
+    )
     vertical_match = abs(block.bbox.y0 - other.bbox.y0) < 12
 
     if not (horizontal_match and vertical_match):
@@ -1035,7 +1037,6 @@ def _record_unreproduced_decorations(
     ]
     if any(region.type == "column" for region in page.regions):
         lines = [line for line in lines if line.bbox.height < page.height_pt * 0.3]
-    blocks = [block for region in page.regions for block in region.blocks]
     if lines:
         warnings.append(
             f"Pagina {page.page_number}: {len(lines)} linea/e decorativa/e non sono state "
