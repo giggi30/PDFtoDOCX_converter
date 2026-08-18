@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pdf-to-docx-backend"
+version = "0.1.0"
+description = "MVP backend for temporary PDF to DOCX conversion jobs"
+requires-python = ">=3.12"
+dependencies = [
+  "alembic>=1.13,<2",
+  "fastapi>=0.115,<1",
+  "pdfplumber>=0.11,<1",
+  "pillow>=12,<13",
+  "psycopg[binary]>=3.2,<4",
+  "pypdfium2>=5,<6",
+  "pydantic-settings>=2.6,<3",
+  "python-docx>=1.1,<2",
+  "python-multipart>=0.0.12,<1",
+  "redis>=5,<6",
+  "rq>=2,<3",
+  "sqlalchemy>=2.0,<3",
+  "uvicorn[standard]>=0.32,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx2>=2.0,<3",
+  "mypy>=1.13,<2",
+  "pytest>=8.3,<9",
+  "pytest-cov>=6,<7",
+  "ruff>=0.8,<1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["docx.*", "pdfplumber.*", "pypdfium2.*", "rq.*"]
+ignore_missing_imports = true
