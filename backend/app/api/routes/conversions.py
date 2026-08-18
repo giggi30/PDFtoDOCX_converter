@@ -1,5 +1,6 @@
 import json
 import uuid
+from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 
@@ -72,11 +73,20 @@ def create_conversion(
         dispatcher.enqueue(job.id)
     except Exception as exc:
         db.rollback()
-        persisted_job = repository.get(job.id)
-        if persisted_job is not None:
-            repository.delete(persisted_job)
-            repository.commit()
-        storage.delete(source_key)
+        if job.id is not None:
+            # Best-effort cleanup when DB commit succeeded but queue enqueue failed.
+            try:
+                persisted_job = repository.get(job.id)
+            except Exception:
+                persisted_job = None
+            if persisted_job is not None:
+                try:
+                    repository.delete(persisted_job)
+                    repository.commit()
+                except Exception:
+                    db.rollback()
+        with suppress(Exception):
+            storage.delete(source_key)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Conversion service is temporarily unavailable",

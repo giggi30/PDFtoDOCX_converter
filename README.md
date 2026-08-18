@@ -104,6 +104,20 @@ pytest --cov=app
 Apply database migrations with `alembic upgrade head`. Configuration uses the `APP_` prefix;
 all supported variables and safe local defaults are documented in `.env.example`.
 
+## Deploy notes (Vercel)
+
+The defaults in `.env.example` are for local Docker Compose only (`postgres` and `redis`
+hostnames). On Vercel you must set external service URLs:
+
+- `APP_DATABASE_URL`: managed PostgreSQL URL (for example Neon/Supabase/RDS).
+- `APP_REDIS_URL`: managed Redis URL (for example Upstash/Redis Cloud).
+- `APP_TOKEN_PEPPER`: long random secret.
+
+This backend also requires an RQ worker and LibreOffice for DOCX rendering. Vercel serverless
+functions do not run a persistent worker process. For production, run the worker on a separate
+runtime (VM/container) that shares the same `APP_DATABASE_URL`, `APP_REDIS_URL` and
+`APP_STORAGE_PATH`.
+
 ## Security and retention notes
 
 - Uploaded names never become filesystem paths; opaque UUID-based keys are used.

@@ -1,7 +1,9 @@
+import os
 from functools import lru_cache
 from pathlib import Path
+from urllib.parse import urlparse
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +22,24 @@ class Settings(BaseSettings):
     preview_dpi: int = Field(default=96, ge=72, le=200)
     libreoffice_binary: str = "soffice"
     libreoffice_timeout_seconds: int = Field(default=30, ge=5, le=120)
+
+    @model_validator(mode="after")
+    def validate_runtime_urls(self) -> "Settings":
+        # Docker service names work locally in Compose, but never on Vercel.
+        if os.getenv("VERCEL") == "1":
+            db_host = urlparse(self.database_url).hostname
+            redis_host = urlparse(self.redis_url).hostname
+            if db_host == "postgres":
+                raise ValueError(
+                    "APP_DATABASE_URL points to 'postgres', which is only valid in Docker Compose. "
+                    "Set APP_DATABASE_URL to a managed PostgreSQL host for Vercel."
+                )
+            if redis_host == "redis":
+                raise ValueError(
+                    "APP_REDIS_URL points to 'redis', which is only valid in Docker Compose. "
+                    "Set APP_REDIS_URL to a managed Redis host for Vercel."
+                )
+        return self
 
 
 @lru_cache
