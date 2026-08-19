@@ -6,7 +6,8 @@ alembic upgrade head
 
 # Avvia il worker in background
 echo "Starting RQ worker..."
-python -m rq worker conversions --url $APP_REDIS_URL &
+# Usiamo il comando 'rq' direttamente invece di 'python -m rq'
+rq worker conversions --url $APP_REDIS_URL &
 
 # Avvia le API
 echo "Starting FastAPI app..."
