@@ -15,9 +15,11 @@ COPY pyproject.toml README.md ./
 COPY app ./app
 COPY alembic.ini ./
 COPY alembic ./alembic
+COPY start.sh ./
 RUN pip install .
 
+RUN chmod +x start.sh
 RUN mkdir -p /data/conversions && chown -R app:app /app /data/conversions
 USER app
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["./start.sh"]

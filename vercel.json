@@ -1,8 +1,10 @@
 {
+  "version": 2,
   "builds": [
     {
       "src": "frontend/package.json",
-      "use": "@vercel/static-build"
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
     },
     {
       "src": "backend/app/main.py",
@@ -12,6 +14,10 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
+      "destination": "backend/app/main.py"
+    },
+    {
+      "source": "/health",
       "destination": "backend/app/main.py"
     },
     {

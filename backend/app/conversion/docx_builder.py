@@ -29,6 +29,7 @@ from PIL import Image, UnidentifiedImageError
 from app.conversion.models import (
     BoundingBox,
     Decoration,
+    DocumentModel,
     ImageElement,
     PageModel,
     Region,
@@ -341,7 +342,7 @@ def _add_region_content(
     decorations: list[Decoration] | None = None,
     left_indent_pt: float = 0,
     right_indent_pt: float = 0,
-    gap_scale: float = 0.55,
+    gap_scale: float = 0.98,
     max_gap_pt: float = 18.0,
     preserve_horizontal_positions: bool = False,
 ) -> None:
@@ -366,6 +367,7 @@ def _add_region_content(
 
     # Deduplicate blocks to handle Canva's shadow text layers
     region_blocks = _deduplicate_shadow_blocks(region.blocks)
+    _ = decorations
     
     elements: list[tuple[float, float, TextBlock | ImageElement]] = [
         (block.bbox.y0, block.bbox.x0, block) for block in region_blocks
@@ -376,9 +378,8 @@ def _add_region_content(
     )
     first = True
     previous_bottom: float | None = region.bbox.y0 if preserve_positions else None
-    # Use a higher gap scale to better match PDF visual spacing in Word
-    # active_gap_scale = 0.95 accounts for Word's default paragraph behavior
-    active_gap_scale = 0.98
+    # Use the provided gap scale to better match PDF visual spacing in Word
+    active_gap_scale = gap_scale
     
     for _, _, element in sorted(elements, key=lambda item: (item[0], item[1])):
         space_before = 0.0
@@ -401,6 +402,18 @@ def _add_region_content(
             paragraph = _new_paragraph(container, first)
             _configure_paragraph(paragraph, element)
             paragraph.paragraph_format.space_before = Pt(space_before)
+            
+            if left_indent_pt > 0:
+                curr = paragraph.paragraph_format.left_indent
+                paragraph.paragraph_format.left_indent = Pt((curr.pt if curr else 0) + left_indent_pt)
+            if right_indent_pt > 0:
+                curr = paragraph.paragraph_format.right_indent
+                paragraph.paragraph_format.right_indent = Pt((curr.pt if curr else 0) + right_indent_pt)
+            
+            if preserve_horizontal_positions:
+                rel_x = max(0.0, element.bbox.x0 - region.bbox.x0)
+                curr = paragraph.paragraph_format.left_indent
+                paragraph.paragraph_format.left_indent = Pt((curr.pt if curr else 0) + rel_x)
             
             paired_icon = icon_map.get(element.id)
 
@@ -644,7 +657,7 @@ def _configure_section(section: Section, page: PageModel) -> None:
 
 
 def _add_header_or_footer(
-    section: Section, page: PageModel, region: Region, warnings: list[str]
+    section: Section, _page: PageModel, region: Region, warnings: list[str]
 ) -> None:
     target = section.header if region.type == "header" else section.footer
     target.is_linked_to_previous = False
@@ -915,7 +928,7 @@ def _add_zoned_columns(
     warnings: list[str],
     used_images: set[str] | None = None,
 ) -> set[str]:
-    ordered = sorted(columns[:2], key=lambda region: region.bbox.x0)
+    ordered = sorted(columns[:2], key=lambda r: r.bbox.x0)
     divider = _vertical_divider(page)
     if divider is not None:
         boundary = (divider.bbox.x0 + divider.bbox.x1) / 2
@@ -1104,10 +1117,8 @@ def _add_page(
 
 
 def document_model_to_docx(
-    model: object,
+    model: DocumentModel,
 ) -> DocxBuildResult:
-    from app.conversion.models import DocumentModel
-
     if not isinstance(model, DocumentModel):
         raise TypeError("model must be a DocumentModel")
     document = Document()
