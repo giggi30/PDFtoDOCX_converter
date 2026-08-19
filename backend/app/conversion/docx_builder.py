@@ -405,10 +405,12 @@ def _add_region_content(
             
             if left_indent_pt > 0:
                 curr = paragraph.paragraph_format.left_indent
-                paragraph.paragraph_format.left_indent = Pt((curr.pt if curr else 0) + left_indent_pt)
+                base_indent = curr.pt if curr else 0
+                paragraph.paragraph_format.left_indent = Pt(base_indent + left_indent_pt)
             if right_indent_pt > 0:
                 curr = paragraph.paragraph_format.right_indent
-                paragraph.paragraph_format.right_indent = Pt((curr.pt if curr else 0) + right_indent_pt)
+                base_indent = curr.pt if curr else 0
+                paragraph.paragraph_format.right_indent = Pt(base_indent + right_indent_pt)
             
             if preserve_horizontal_positions:
                 rel_x = max(0.0, element.bbox.x0 - region.bbox.x0)
